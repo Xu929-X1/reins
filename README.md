@@ -18,6 +18,15 @@ is an observable, interruptible checkpoint.
 
 You stay in control. The loop stays yours.
 
+reins is designed for **human-paced agents** — tasks where a person
+can follow along, understand each step, and intervene when needed.
+If your agent needs 1000 tool calls to finish a task, reins will
+tell you that's probably a problem worth fixing first.
+
+Most agent frameworks optimize for longer sessions and full autonomy.
+reins optimizes for **human readability and confidence**. An agent
+you can follow is an agent you can trust.
+
 ## Core Concepts
 
 > **Note:** reins currently supports hand-written ReAct loops. Integration with LangChain, LlamaIndex, and other frameworks is on the roadmap.
