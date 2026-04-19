@@ -1,28 +1,46 @@
 {
-    "name": "reins",
-    "version": "1.0.0",
-    "description": "AOP based harness for LLM agents. Human-in-the-loop, resumability, and observability — without touching your core loop.",
-    "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
-        }
-    },
-    "files": ["dist"],
-    "scripts": {
-        "build": "tsc -p tsconfig.prod.json",
-        "build:dev": "tsc -p tsconfig.dev.json",
-        "build:watch": "tsc -p tsconfig.dev.json --watch",
-        "clean": "rm -rf dist",
-        "prepublishOnly": "npm run clean && npm run build",
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "Xu929-X1",
-    "license": "MIT",
-    "engines": {
-        "node": ">=18"
+  "name": "reins",
+  "version": "1.0.0",
+  "description": "AOP based harness for LLM agents. Human-in-the-loop, resumability, and observability — without touching your core loop.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "keywords": [
+    "llm",
+    "agent",
+    "harness",
+    "aop",
+    "human-in-the-loop",
+    "react-loop",
+    "observability",
+    "resumability",
+    "lifecycle-hooks",
+    "tool-calling"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.prod.json",
+    "build:dev": "tsc -p tsconfig.dev.json",
+    "build:watch": "tsc -p tsconfig.dev.json --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Xu929-X1",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "typescript": "^6.0.3"
+  }
 }
