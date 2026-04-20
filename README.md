@@ -95,21 +95,23 @@ npm install reins
 ## Usage
 
 ```typescript
-import { createHarness } from 'reins'
+import { createReinsInstance } from 'reins'
 
-const harness = createHarness({ stackSize: 50 })
+const harness = createReinsInstance({ maxStackSize: 50 })
 
 // Register any function — framework agnostic
 harness.register('search', searchFn, {
-  beforeToolCall: async (args) => {
-    console.log('LLM wants to search:', args)
-    return { action: 'continue' }
-  },
-  afterToolCall: async (result) => {
-    if (!result.hits.length) {
-      return { action: 'abort', reason: 'No results found' }
-    }
-    return { action: 'continue' }
+  hooks: {
+    beforeToolCall: async (args) => {
+      console.log('LLM wants to search:', args)
+      return { action: 'continue' }
+    },
+    afterToolCall: async (result) => {
+      if (!result.hits.length) {
+        return { action: 'abort', reason: 'No results found' }
+      }
+      return { action: 'continue' }
+    },
   },
 })
 
@@ -132,13 +134,13 @@ LlamaIndex tools, or OpenAI functions. Wrap them once, register once:
 
 ```typescript
 // bare function
-harness.register('search', mySearchFn)
+harness.register('search', mySearchFn, { hooks: {} })
 
 // langchain
-harness.register('search', (args) => langchainTool.invoke(args))
+harness.register('search', (args) => langchainTool.invoke(args), { hooks: {} })
 
 // llamaindex
-harness.register('search', (args) => llamaIndexTool.call(args))
+harness.register('search', (args) => llamaIndexTool.call(args), { hooks: {} })
 ```
 
 ## Examples
@@ -167,14 +169,18 @@ if (signal.action === "abort") break;
 
 See [`examples/01-basic.ts`](./examples/01-basic.ts) for full runnable example.
 
-### LangChain — wrap tools, keep your executor
+### LangChain — wrap tools, drive with `createAgent`
 
 ```typescript
+import "dotenv/config";
 import { DynamicStructuredTool } from "@langchain/core/tools";
+import { ChatOpenAI } from "@langchain/openai";
+import { createAgent } from "langchain";
 import { createReinsInstance } from "reins";
 
-const harness = createReinsInstance({});
-harness.register("search_docs", mySearchFn, {
+const reins = createReinsInstance({ maxStackSize: 50 });
+
+reins.register("search_docs", mySearchFn, {
   hooks: {
     afterToolCall: (result) => {
       // inspect, override, or abort before result enters LLM context
@@ -183,19 +189,29 @@ harness.register("search_docs", mySearchFn, {
   },
 });
 
-// bridge: LangChain tool delegates to harness
+// bridge: LangChain tool delegates to reins
 const searchTool = new DynamicStructuredTool({
   name: "search_docs",
   description: "Search internal docs.",
   schema: z.object({ query: z.string() }),
   func: async (args) => {
-    const { result, signal } = await harness.call("search_docs", args);
+    const { result, signal } = await reins.call("search_docs", args);
     if (signal.action === "abort") throw new Error(signal.reason);
     return String(result);
   },
 });
 
-// pass searchTool to AgentExecutor as normal — reins hooks fire on every call
+const llm = new ChatOpenAI({
+  model: "gpt-4o-mini",
+  temperature: 0,
+  apiKey: process.env.OPEN_AI_API_KEY,
+});
+
+const agent = createAgent({ model: llm, tools: [searchTool] });
+
+const { messages } = await agent.invoke({
+  messages: [{ role: "user", content: "Search for quicksort docs." }],
+});
 ```
 
 See [`examples/02-langchain.ts`](./examples/02-langchain.ts) for a full ReAct agent example.

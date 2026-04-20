@@ -82,21 +82,23 @@ npm install reins
 ## 使用
 
 ```typescript
-import { createHarness } from 'reins'
+import { createReinsInstance } from 'reins'
 
-const harness = createHarness({ stackSize: 50 })
+const harness = createReinsInstance({ maxStackSize: 50 })
 
 // 注册任意函数——框架无关
 harness.register('search', searchFn, {
-  beforeToolCall: async (args) => {
-    console.log('LLM 想要搜索：', args)
-    return { action: 'continue' }
-  },
-  afterToolCall: async (result) => {
-    if (!result.hits.length) {
-      return { action: 'abort', reason: '没有搜索结果' }
-    }
-    return { action: 'continue' }
+  hooks: {
+    beforeToolCall: async (args) => {
+      console.log('LLM 想要搜索：', args)
+      return { action: 'continue' }
+    },
+    afterToolCall: async (result) => {
+      if (!result.hits.length) {
+        return { action: 'abort', reason: '没有搜索结果' }
+      }
+      return { action: 'continue' }
+    },
   },
 })
 
@@ -118,13 +120,13 @@ while (true) {
 
 ```typescript
 // 裸函数
-harness.register('search', mySearchFn)
+harness.register('search', mySearchFn, { hooks: {} })
 
 // langchain
-harness.register('search', (args) => langchainTool.invoke(args))
+harness.register('search', (args) => langchainTool.invoke(args), { hooks: {} })
 
 // llamaindex
-harness.register('search', (args) => llamaIndexTool.call(args))
+harness.register('search', (args) => llamaIndexTool.call(args), { hooks: {} })
 ```
 
 ## API

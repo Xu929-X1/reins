@@ -1,6 +1,6 @@
 {
   "name": "reins",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "AOP based harness for LLM agents. Human-in-the-loop, resumability, and observability — without touching your core loop.",
   "type": "module",
   "main": "./dist/index.js",

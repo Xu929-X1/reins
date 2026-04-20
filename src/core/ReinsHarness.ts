@@ -1,5 +1,5 @@
+import { randomUUID } from "crypto";
 import { ReinsConfig, ReinsSignal, ToolCallingSnapshot, ToolDefinition } from "./types.js";
-
 const DEFAULT_STACK_SIZE = 50;
 const MAX_STACK_SIZE = 100;
 
@@ -36,7 +36,7 @@ export class ReinsHarness {
         const beforeSignal = await tool.hooks?.beforeToolCall?.(args)
         if (beforeSignal && beforeSignal.action !== "continue") {
             const abortSnapshot: ToolCallingSnapshot = {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 timestamp: Date.now(),
                 tool: name,
                 args,
@@ -66,7 +66,7 @@ export class ReinsHarness {
         const originalResult = signal.action === 'override' ? result : undefined
 
         const snapshot: ToolCallingSnapshot = {
-            id: crypto.randomUUID(),
+            id: randomUUID(),
             timestamp: Date.now(),
             tool: name,
             args,
