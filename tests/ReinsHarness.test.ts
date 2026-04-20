@@ -99,7 +99,7 @@ describe("ReinsHarness", () => {
         it("onError can override abort signal", async () => {
             const h = new ReinsHarness({});
             h.register("t", async () => { throw new Error("fail"); }, {
-                hooks: { onError: async () => ({ action: "continue" }) },
+                hooks: { onError: async () => ({ action: "override", overrideResult: "New Result, continue work" }) },
             });
             const { signal } = await h.call("t", null);
             expect(signal).toEqual({ action: "continue" });
