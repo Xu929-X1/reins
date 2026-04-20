@@ -1,5 +1,5 @@
 {
-  "name": "reins",
+  "name": "@xu929/reins",
   "version": "0.1.0",
   "description": "AOP based harness for LLM agents. Human-in-the-loop, resumability, and observability — without touching your core loop.",
   "type": "module",
@@ -38,6 +38,14 @@
     "test:coverage": "vitest run --coverage"
   },
   "author": "Xu929-X1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xu929-X1/reins"
+  },
+  "bugs": {
+    "url": "https://github.com/Xu929-X1/reins/issues"
+  },
+  "homepage": "https://github.com/Xu929-X1/reins#readme",
   "license": "MIT",
   "engines": {
     "node": ">=18"
