@@ -97,12 +97,13 @@ describe("ReinsHarness", () => {
         });
 
         it("onError can override abort signal", async () => {
-            const h = new ReinsHarness({});
+            const h = new ReinsHarness({})
             h.register("t", async () => { throw new Error("fail"); }, {
-                hooks: { onError: async () => ({ action: "override", overrideResult: "New Result, continue work" }) },
+                hooks: { onError: async () => ({ action: "override", overrideResult: "fallback result" }) },
             });
-            const { signal } = await h.call("t", null);
-            expect(signal).toEqual({ action: "continue" });
+            const { result, signal } = await h.call("t", null);
+            expect(signal).toEqual({ action: "override", overrideResult: "fallback result" })
+            expect(result).toBe("fallback result")
         });
         it("beforeToolCall abort signal stops execution before tool runs", async () => {
             const fn = vi.fn().mockResolvedValue("should not run")

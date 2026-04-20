@@ -53,17 +53,21 @@ export class ReinsHarness {
 
         let result: unknown
         let signal: ReinsSignal
+        let caughtError: unknown
 
         try {
             result = await tool.fn(args)
             signal = await tool.hooks?.afterToolCall?.(result) ?? { action: 'continue' }
         } catch (err) {
+            caughtError = err
             signal = await tool.hooks?.onError?.(err) ?? { action: 'abort', reason: String(err) }
             result = null
         }
 
         const resolvedResult = signal.action === 'override' ? signal.overrideResult : result
-        const originalResult = signal.action === 'override' ? result : undefined
+        const originalResult = signal.action === 'override'
+            ? (caughtError ?? result)
+            : undefined
 
         const snapshot: ToolCallingSnapshot = {
             id: randomUUID(),
