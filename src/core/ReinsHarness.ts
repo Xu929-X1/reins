@@ -33,7 +33,23 @@ export class ReinsHarness {
         if (!tool) throw new Error(`Tool "${name}" is not registered`)
 
         // before hook
-        await tool.hooks?.beforeToolCall?.(args)
+        const beforeSignal = await tool.hooks?.beforeToolCall?.(args)
+        if (beforeSignal && beforeSignal.action !== "continue") {
+            const abortSnapshot: ToolCallingSnapshot = {
+                id: crypto.randomUUID(),
+                timestamp: Date.now(),
+                tool: name,
+                args,
+                result: null,
+                signal: beforeSignal,
+
+            }
+            this.pushSnapshot(abortSnapshot);
+            return {
+                result: null,
+                signal: beforeSignal
+            }
+        }
 
         let result: unknown
         let signal: ReinsSignal

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ReinsHarness, createReinsInstance } from "../src/core/ReinsHarness.js";
 
-const noop = async (_args: unknown) => {};
+const noop = async (_args: unknown) => { };
 
 describe("ReinsHarness", () => {
     describe("constructor", () => {
@@ -104,6 +104,20 @@ describe("ReinsHarness", () => {
             const { signal } = await h.call("t", null);
             expect(signal).toEqual({ action: "continue" });
         });
+        it("beforeToolCall abort signal stops execution before tool runs", async () => {
+            const fn = vi.fn().mockResolvedValue("should not run")
+            const h = new ReinsHarness({})
+            h.register("t", fn, {
+                hooks: {
+                    beforeToolCall: async () => ({ action: "abort", reason: "blocked" })
+                }
+            })
+            const { result, signal } = await h.call("t", null)
+            expect(fn).not.toHaveBeenCalled()
+            expect(result).toBeNull()
+            expect(signal).toEqual({ action: "abort", reason: "blocked" })
+            expect(h.getStack()[0].tool).toBe("t")
+        })
     });
 
     describe("getStack", () => {
