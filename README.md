@@ -141,6 +141,65 @@ harness.register('search', (args) => langchainTool.invoke(args))
 harness.register('search', (args) => llamaIndexTool.call(args))
 ```
 
+## Examples
+
+### Basic — plain async functions
+
+```typescript
+import { createReinsInstance } from "reins";
+
+const harness = createReinsInstance({ maxStackSize: 50 });
+
+harness.register("search", searchWeb, {
+  hooks: {
+    beforeToolCall: (args) => console.log("calling with:", args),
+    afterToolCall:  (result) => {
+      if (!result) return { action: "abort", reason: "empty result" };
+      return { action: "continue" };
+    },
+  },
+});
+
+// in your agent loop
+const { result, signal } = await harness.call("search", { query: "..." });
+if (signal.action === "abort") break;
+```
+
+See [`examples/01-basic.ts`](./examples/01-basic.ts) for full runnable example.
+
+### LangChain — wrap tools, keep your executor
+
+```typescript
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import { createReinsInstance } from "reins";
+
+const harness = createReinsInstance({});
+harness.register("search_docs", mySearchFn, {
+  hooks: {
+    afterToolCall: (result) => {
+      // inspect, override, or abort before result enters LLM context
+      return { action: "continue" };
+    },
+  },
+});
+
+// bridge: LangChain tool delegates to harness
+const searchTool = new DynamicStructuredTool({
+  name: "search_docs",
+  description: "Search internal docs.",
+  schema: z.object({ query: z.string() }),
+  func: async (args) => {
+    const { result, signal } = await harness.call("search_docs", args);
+    if (signal.action === "abort") throw new Error(signal.reason);
+    return String(result);
+  },
+});
+
+// pass searchTool to AgentExecutor as normal — reins hooks fire on every call
+```
+
+See [`examples/02-langchain.ts`](./examples/02-langchain.ts) for a full ReAct agent example.
+
 ## API
 
 <!-- document public API here -->
