@@ -18,7 +18,7 @@ export interface ToolCallingSnapshot {
 }
 
 export interface ToolHooks<TArgs = unknown, TResult = unknown> {
-    beforeToolCall?: (args: TArgs) => void | Promise<void>;
+    beforeToolCall?: (args: TArgs) => void | ReinsSignal | Promise<void | ReinsSignal>
     afterToolCall?: (result: TResult) => ReinsSignal | Promise<ReinsSignal>;
     onError?: (error: unknown) => ReinsSignal | Promise<ReinsSignal>;
 }
