@@ -2,6 +2,8 @@
 
 > AOP-based harness for LLM agents. Human-in-the-loop, resumability, and observability — without touching your core loop.
 
+[English](./README.md) | [中文](./i18n/README.zh-CN.md)
+
 ## Why reins?
 
 LLM agents are opaque by default. When something goes wrong mid-run,
@@ -15,6 +17,7 @@ is an observable, interruptible checkpoint.
 - **Interrupt** — pause the loop when something looks wrong
 - **Correct** — override a bad result or redirect the agent
 - **Resume** — continue from where you stopped, not from the beginning
+- **Framework agnostic** — register any function, from any library, or none at all
 
 You stay in control. The loop stays yours.
 
@@ -29,8 +32,6 @@ you can follow is an agent you can trust.
 
 ## Core Concepts
 
-> **Note:** reins currently supports hand-written ReAct loops. Integration with LangChain, LlamaIndex, and other frameworks is on the roadmap.
-
 A basic ReAct agent looks like this:
 
 ```javascript
@@ -43,38 +44,41 @@ while (true) {
 }
 ```
 
-Simple — but completely opaque. You can't see what the agent is thinking, catch a bad tool call before it causes damage, or recover from a failure without starting over.
+Simple — but completely opaque. You can't see what the agent is
+thinking, catch a bad tool call before it causes damage, or recover
+from a failure without starting over.
 
-reins exposes four lifecycle hooks inside this loop:
+reins exposes two lifecycle hooks around every tool call:
 
 ```
-┌─────────────────────────────────────────────────┐
-│                   ReAct Loop                    │
-│                                                 │
-│  ┌──────────────┐                               │
-│  │ beforeThink  │  ← inspect / modify context   │
-│  └──────┬───────┘                               │
-│         │                                       │
-│   llm.think(context)                            │
-│         │                                       │
-│  ┌──────▼───────┐                               │
-│  │  afterThink  │  ← see what the LLM decided   │
-│  └──────┬───────┘                               │
-│         │                                       │
-│  ┌──────▼──────────────┐                        │
-│  │  beforeToolCall     │  ← validate args       │
-│  └──────┬──────────────┘                        │
-│         │                                       │
-│   myTools[action.tool](action.args)             │
-│         │                                       │
-│  ┌──────▼──────────────┐                        │
-│  │   afterToolCall     │  ← inspect, override,  │
-│  └─────────────────────┘    or abort            │
-│                                                 │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│                    ReAct Loop                    │
+│                                                  │
+│   llm.think(context)                             │
+│         │                                        │
+│         │  action = { tool, args }               │
+│         │                                        │
+│  ┌──────▼──────────────┐                         │
+│  │  beforeToolCall     │  ← llm's intent         │
+│  └──────┬──────────────┘   validate args         │
+│         │                  abort early           │
+│         │                                        │
+│   tool(args)                                     │
+│         │                                        │
+│  ┌──────▼──────────────┐                         │
+│  │   afterToolCall     │  ← what happened        │
+│  └─────────────────────┘   override result       │
+│                             save snapshot        │
+│                             abort or continue    │
+└──────────────────────────────────────────────────┘
 ```
 
-Each hook can return a **signal** that controls what happens next:
+`beforeToolCall` gives you the LLM's intent — what tool it chose and
+why. `afterToolCall` gives you the result that will become the next
+iteration's context. Between these two hooks, you have full visibility
+into every decision the agent makes.
+
+Each hook returns a **signal** that controls what happens next:
 
 | Signal     | Effect                                           |
 |------------|--------------------------------------------------|
@@ -82,16 +86,34 @@ Each hook can return a **signal** that controls what happens next:
 | `abort`    | Loop stops immediately                           |
 | `override` | Replace the tool result before it enters context |
 
-With reins, the same loop becomes:
+## Install
 
-```javascript
+```bash
+npm install reins
+```
+
+## Usage
+
+```typescript
+import { createHarness } from 'reins'
+
 const harness = createHarness({ stackSize: 50 })
 
+// Register any function — framework agnostic
 harness.register('search', searchFn, {
-  beforeToolCall: (args) => { /* validate */ },
-  afterToolCall:  (result) => { /* inspect or override */ },
+  beforeToolCall: async (args) => {
+    console.log('LLM wants to search:', args)
+    return { action: 'continue' }
+  },
+  afterToolCall: async (result) => {
+    if (!result.hits.length) {
+      return { action: 'abort', reason: 'No results found' }
+    }
+    return { action: 'continue' }
+  },
 })
 
+// Your loop — unchanged except for one line
 while (true) {
   const action = await llm.think(context)
   if (action.type === 'finish') break
@@ -105,16 +127,18 @@ while (true) {
 
 One line changed. Full visibility gained.
 
-## Install
+Works with any function — bare async functions, LangChain tools,
+LlamaIndex tools, or OpenAI functions. Wrap them once, register once:
 
-```bash
-npm install reins
-```
+```typescript
+// bare function
+harness.register('search', mySearchFn)
 
-## Usage
+// langchain
+harness.register('search', (args) => langchainTool.invoke(args))
 
-```ts
-// example here
+// llamaindex
+harness.register('search', (args) => llamaIndexTool.call(args))
 ```
 
 ## API
@@ -123,8 +147,6 @@ npm install reins
 
 ## Roadmap
 
-- [ ] LangChain tool adapter
-- [ ] LlamaIndex tool adapter
 - [ ] `@reins/devtools` — visual stack inspector
 
 ## License
